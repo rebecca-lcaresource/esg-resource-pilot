@@ -9,30 +9,26 @@
 **Live URL:** none yet
 
 ## Current state
-Backend built. Supabase project `esg-resource-pilot` (ref `hulgunguwjhxsgdhinrm`) created and healthy. All three tables (profiles, suppliers, change_log) with RLS enabled, the production-control column restriction (suppliers_pc view + column-guard trigger), the append-only change_log trigger, generated overall_score, and auth signup trigger are in place and verified. docs/supabase-setup.md written. No frontend code yet; no users invited yet.
+Backend + frontend built. Supabase project `esg-resource-pilot` (ref `hulgunguwjhxsgdhinrm`) healthy with all three tables (RLS on), the production-control column restriction (suppliers_pc view + column-guard trigger), append-only change_log trigger, generated overall_score, auth signup trigger. Frontend is a complete Vite + React + Tailwind app (sign-in, supplier list, detail, user management, archive, CSV export) that builds cleanly and is wired to the live backend. The security-critical acceptance criteria were verified directly against the database (see Last session). Tables are empty — no users invited, no suppliers seeded, no email/Netlify config yet.
 
 ## Last session
-Session 1: session-start checks (spec v1.0 matches CLAUDE.md); First Session Setup (moved spec + seed files into docs/); created the Supabase project via MCP; applied 4 migrations building the full schema, RLS, views, triggers; verified overall_score (4.0 and null cases) and the change_log trigger with throwaway rows; hardened function exposure per advisors; wrote docs/supabase-setup.md.
+Session 1: session-start checks; First Session Setup; created the Supabase project; applied 4 migrations (full schema, RLS, view, triggers); built the entire frontend and confirmed `npm run build` passes. Ran database-level RLS verification simulating all four roles — PASS on acceptance #6 (sustainability blocked from commercial fields), #7 (purchasing blocked from scores), #8 (PC base table 0 rows / view 1 row), #9 (PC insert blocked), #12 (PC change-log shows only 7 permitted fields), #13 (admin cannot alter change_log), #15 (non-archived delete blocked, archived delete allowed, 14 change_log rows retained), #16 (purchasing sees only own profile); positive edits for sustainability/purchasing succeed. All test fixtures cleaned up (0 rows).
 
 ## Remaining work
-- [x] First Session Setup: create docs/, move product-spec.md, seed-data-pack.md and suppliers-seed.csv into it, commit (see CLAUDE.md Session Protocol)
+- [x] First Session Setup
 - [x] Create Supabase project "esg-resource-pilot" via MCP
-- [x] Build all tables, RLS policies, the column-level restriction for production control, the change_log trigger, then write docs/supabase-setup.md
-- [ ] Auth configuration in the Supabase dashboard: custom SMTP (Brevo), disable self-registration, change the login email template to emit the six-digit code — needs builder's Brevo SMTP credentials
-- [ ] Scaffold the frontend (Vite + React + Tailwind), Supabase client in src/lib
-- [ ] Configure Supabase Auth SMTP with the builder's Brevo credentials, and change the login email template to send a six-digit code instead of a clickable link
-- [ ] Builder: invite all four users from the Supabase dashboard (Authentication → Users → Invite), then assign roles to the resulting profile rows — this cannot be seeded from a file
-- [ ] Build Sign-in — email field, then six-digit code entry, neutral failure message
-- [ ] Build Supplier List — sortable, filterable register with visible role indicator and CSV export
-- [ ] Build Supplier Detail — role-dependent editable fields, filtered change history, archive action
-- [ ] Build User Management (admin only) — invite users, assign and change roles
-- [ ] Build Archive (admin only) — restore, and permanent delete behind a named confirmation
-- [ ] Wire Export arm: CSV generated from the permission-filtered source, restricted columns absent
-- [ ] Wire Scheduled arm: Netlify scheduled function, daily 07:00 US Eastern, composes the change digest and sends via Brevo — sends nothing on days with no changes
+- [x] Build all tables, RLS, column restriction, change_log trigger; write docs/supabase-setup.md
+- [x] Build Sign-in, Supplier List, Supplier Detail, User Management, Archive
+- [x] Wire Export arm: CSV from the permission-filtered source, restricted columns absent
+- [x] Database-level verification of the security-critical acceptance criteria (6–9, 12, 13, 15, 16)
+- [ ] BUILDER: create Brevo account, authenticate sending domain, collect SMTP key (spec §14)
+- [ ] Supabase Auth config (dashboard): custom SMTP (Brevo), disable self-registration, change the login email template to emit the six-digit code `{{ .Token }}`
+- [ ] BUILDER: invite all four users from the Supabase dashboard; set the first admin via SQL (see docs/supabase-setup.md), then assign roles in User Management
+- [ ] Wire Scheduled arm: Netlify scheduled function, daily 07:00 US Eastern, composes the change digest via Brevo — sends nothing on days with no changes (never to production control)
 - [ ] Seed the suppliers table from docs/suppliers-seed.csv — do not seed overall_score or change_log
-- [ ] Local test pass — sign in as all four roles and walk every view
-- [ ] Acceptance criteria pass — verify every criterion in spec Section "Acceptance Criteria" before deploy, with particular attention to numbers 6 through 13
-- [ ] Deploy to Netlify — builder connects the repo and adds environment variables in the Netlify dashboard
+- [ ] Local end-to-end test pass — sign in as all four roles and walk every view (needs SMTP + users)
+- [ ] Full acceptance criteria pass incl. #1–5, #10, #11, #14, #17–20
+- [ ] BUILDER: connect Netlify to the repo, add environment variables, deploy from main
 
 ## Build decisions
 - Column-level restriction for production control implemented two ways: a `suppliers_pc` view (security_invoker=false, safe columns only) for reads, and a BEFORE UPDATE column-guard trigger for writes — because all logged-in users share one Postgres `authenticated` role, so per-role column GRANTs are impossible.
@@ -49,4 +45,6 @@ Session 1: session-start checks (spec v1.0 matches CLAUDE.md); First Session Set
 - Supabase Free plan pauses after roughly a week without traffic; the builder wakes the project before demos
 
 ## Notes for next session
-None.
+- The app runs locally with a gitignored `.env.local` (already created with the project URL + publishable key). To run it: `npm install` then `npm run dev`. But login won't work until Supabase Auth SMTP (Brevo) is configured and at least one user is invited.
+- Next natural build step (no builder credentials needed): the Netlify scheduled digest function and seeding the 14 suppliers from docs/suppliers-seed.csv.
+- Seeding needs a role that can insert (admin/purchasing/sustainability) via the app or a service-role script — the base table insert has no column restriction, so a one-off seed with full columns is fine.
