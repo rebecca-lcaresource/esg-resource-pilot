@@ -4,18 +4,18 @@
 > anything. Update it at every save point. Replace content — do not append.
 > History lives in git.
 
-**Session:** 0 — build not started
-**Last updated:** 31 July 2026 — by Project Governor, pre-build
+**Session:** 1 — in progress
+**Last updated:** 31 July 2026
 **Live URL:** none yet
 
 ## Current state
-Nothing built. Repo contains CLAUDE.md, PROGRESS.md, product-spec.md, seed-data-pack.md, suppliers-seed.csv.
+First Session Setup done: docs/ created, product-spec.md, seed-data-pack.md and suppliers-seed.csv moved into it. No application code or Supabase project yet.
 
 ## Last session
-None — the first build session has not happened yet.
+Session 1: ran session-start checks (spec v1.0 matches CLAUDE.md), performed First Session Setup — moved the spec and seed files into docs/. Awaiting builder input on Supabase project creation and credentials before build work.
 
 ## Remaining work
-- [ ] First Session Setup: create docs/, move product-spec.md, seed-data-pack.md and suppliers-seed.csv into it, commit (see CLAUDE.md Session Protocol)
+- [x] First Session Setup: create docs/, move product-spec.md, seed-data-pack.md and suppliers-seed.csv into it, commit (see CLAUDE.md Session Protocol)
 - [ ] Create Supabase project "esg-resource-pilot" via MCP — confirm the name with the builder first
 - [ ] Build all tables, RLS policies, the column-level restriction for production control, the change_log trigger and Auth configuration, then write docs/supabase-setup.md
 - [ ] Configure Supabase Auth SMTP with the builder's Brevo credentials, and change the login email template to send a six-digit code instead of a clickable link
