@@ -9,15 +9,17 @@
 **Live URL:** none yet
 
 ## Current state
-First Session Setup done: docs/ created, product-spec.md, seed-data-pack.md and suppliers-seed.csv moved into it. No application code or Supabase project yet.
+Backend built. Supabase project `esg-resource-pilot` (ref `hulgunguwjhxsgdhinrm`) created and healthy. All three tables (profiles, suppliers, change_log) with RLS enabled, the production-control column restriction (suppliers_pc view + column-guard trigger), the append-only change_log trigger, generated overall_score, and auth signup trigger are in place and verified. docs/supabase-setup.md written. No frontend code yet; no users invited yet.
 
 ## Last session
-Session 1: ran session-start checks (spec v1.0 matches CLAUDE.md), performed First Session Setup — moved the spec and seed files into docs/. Awaiting builder input on Supabase project creation and credentials before build work.
+Session 1: session-start checks (spec v1.0 matches CLAUDE.md); First Session Setup (moved spec + seed files into docs/); created the Supabase project via MCP; applied 4 migrations building the full schema, RLS, views, triggers; verified overall_score (4.0 and null cases) and the change_log trigger with throwaway rows; hardened function exposure per advisors; wrote docs/supabase-setup.md.
 
 ## Remaining work
 - [x] First Session Setup: create docs/, move product-spec.md, seed-data-pack.md and suppliers-seed.csv into it, commit (see CLAUDE.md Session Protocol)
-- [ ] Create Supabase project "esg-resource-pilot" via MCP — confirm the name with the builder first
-- [ ] Build all tables, RLS policies, the column-level restriction for production control, the change_log trigger and Auth configuration, then write docs/supabase-setup.md
+- [x] Create Supabase project "esg-resource-pilot" via MCP
+- [x] Build all tables, RLS policies, the column-level restriction for production control, the change_log trigger, then write docs/supabase-setup.md
+- [ ] Auth configuration in the Supabase dashboard: custom SMTP (Brevo), disable self-registration, change the login email template to emit the six-digit code — needs builder's Brevo SMTP credentials
+- [ ] Scaffold the frontend (Vite + React + Tailwind), Supabase client in src/lib
 - [ ] Configure Supabase Auth SMTP with the builder's Brevo credentials, and change the login email template to send a six-digit code instead of a clickable link
 - [ ] Builder: invite all four users from the Supabase dashboard (Authentication → Users → Invite), then assign roles to the resulting profile rows — this cannot be seeded from a file
 - [ ] Build Sign-in — email field, then six-digit code entry, neutral failure message
@@ -33,7 +35,11 @@ Session 1: ran session-start checks (spec v1.0 matches CLAUDE.md), performed Fir
 - [ ] Deploy to Netlify — builder connects the repo and adds environment variables in the Netlify dashboard
 
 ## Build decisions
-None yet.
+- Column-level restriction for production control implemented two ways: a `suppliers_pc` view (security_invoker=false, safe columns only) for reads, and a BEFORE UPDATE column-guard trigger for writes — because all logged-in users share one Postgres `authenticated` role, so per-role column GRANTs are impossible.
+- `overall_score` is a GENERATED STORED column `round((e+s+g)/3.0,1)` — enforces "derived, never entered, never seeded" and yields null when any pillar is null, for free.
+- change_log is written only by an AFTER INSERT/UPDATE trigger; no write policy exists for any role (append-only incl. admin), and direct write grants revoked.
+- New auth users get a profiles row via trigger, defaulting to `production_control` (least privilege); admin reassigns. First admin must be set manually in SQL (see docs/supabase-setup.md).
+- The `security_definer_view` advisor ERROR on suppliers_pc is a reviewed, accepted exception — it is the column-restriction mechanism itself.
 
 ## Known issues
 - Tool name "Supplier ESG Register" was proposed and accepted by default, never explicitly confirmed — cosmetic, changeable any time
