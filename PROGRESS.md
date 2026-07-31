@@ -9,6 +9,7 @@
 **Live URL:** none yet
 
 ## Current state
+Auth fully configured, users + roles set, 14 suppliers seeded. Ready to deploy to Netlify.
 Backend + frontend built. Supabase project `esg-resource-pilot` (ref `hulgunguwjhxsgdhinrm`) healthy with all three tables (RLS on), the production-control column restriction (suppliers_pc view + column-guard trigger), append-only change_log trigger, generated overall_score, auth signup trigger. Frontend is a complete Vite + React + Tailwind app (sign-in, supplier list, detail, user management, archive, CSV export) that builds cleanly and is wired to the live backend. The security-critical acceptance criteria were verified directly against the database (see Last session). Tables are empty — no users invited, no suppliers seeded, no email/Netlify config yet.
 
 ## Last session
@@ -21,14 +22,14 @@ Session 1: session-start checks; First Session Setup; created the Supabase proje
 - [x] Build Sign-in, Supplier List, Supplier Detail, User Management, Archive
 - [x] Wire Export arm: CSV from the permission-filtered source, restricted columns absent
 - [x] Database-level verification of the security-critical acceptance criteria (6–9, 12, 13, 15, 16)
-- [ ] BUILDER: create Brevo account, authenticate sending domain, collect SMTP key (spec §14)
-- [ ] Supabase Auth config (dashboard): custom SMTP (Brevo), disable self-registration, change the login email template to emit the six-digit code `{{ .Token }}`
-- [ ] BUILDER: invite all four users from the Supabase dashboard; set the first admin via SQL (see docs/supabase-setup.md), then assign roles in User Management
+- [x] BUILDER: Brevo account + domain authenticated (lcaresource.com, DKIM+DMARC verified), SMTP key collected
+- [x] Supabase Auth config (dashboard): custom SMTP (Brevo, from rebecca@lcaresource.com, port 587), self-signup disabled, Magic Link template emits the six-digit `{{ .Token }}`
+- [x] Users created (auto-confirmed) and roles assigned: lcaresource.pilot@gmail.com=admin, rebecca@lcaresource.com=admin, +purchasing=purchasing, +sustainability=sustainability, +production=production_control. Demo uses Gmail plus-addressing so all codes land in lcaresource.pilot@gmail.com
+- [x] Seeded 14 suppliers from docs/suppliers-seed.csv (change_log trigger disabled during seed so history starts empty; overall_score generated, not seeded)
 - [ ] Wire Scheduled arm: Netlify scheduled function, daily 07:00 US Eastern, composes the change digest via Brevo — sends nothing on days with no changes (never to production control)
-- [ ] Seed the suppliers table from docs/suppliers-seed.csv — do not seed overall_score or change_log
-- [ ] Local end-to-end test pass — sign in as all four roles and walk every view (needs SMTP + users)
+- [ ] Local/deployed end-to-end test pass — sign in as all four roles and walk every view
 - [ ] Full acceptance criteria pass incl. #1–5, #10, #11, #14, #17–20
-- [ ] BUILDER: connect Netlify to the repo, add environment variables, deploy from main
+- [ ] BUILDER: connect Netlify to the repo, add environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY), deploy from main
 
 ## Build decisions
 - Column-level restriction for production control implemented two ways: a `suppliers_pc` view (security_invoker=false, safe columns only) for reads, and a BEFORE UPDATE column-guard trigger for writes — because all logged-in users share one Postgres `authenticated` role, so per-role column GRANTs are impossible.
