@@ -4,16 +4,15 @@
 > anything. Update it at every save point. Replace content — do not append.
 > History lives in git.
 
-**Session:** 1 — in progress
+**Session:** 1 — ended (save point)
 **Last updated:** 31 July 2026
-**Live URL:** none yet
+**Live URL:** https://supplier-esg-register.netlify.app
 
 ## Current state
-Auth fully configured, users + roles set, 14 suppliers seeded. Ready to deploy to Netlify.
-Backend + frontend built. Supabase project `esg-resource-pilot` (ref `hulgunguwjhxsgdhinrm`) healthy with all three tables (RLS on), the production-control column restriction (suppliers_pc view + column-guard trigger), append-only change_log trigger, generated overall_score, auth signup trigger. Frontend is a complete Vite + React + Tailwind app (sign-in, supplier list, detail, user management, archive, CSV export) that builds cleanly and is wired to the live backend. The security-critical acceptance criteria were verified directly against the database (see Last session). Tables are empty — no users invited, no suppliers seeded, no email/Netlify config yet.
+LIVE AND WORKING. Deployed to Netlify and login works end-to-end: builder signed in successfully as admin with an emailed one-time code. Supabase project `esg-resource-pilot` (ref `hulgunguwjhxsgdhinrm`) healthy — all three tables (RLS on), production-control column restriction (suppliers_pc view + column-guard trigger), append-only change_log trigger, generated overall_score, auth signup trigger. Frontend is a complete Vite + React + Tailwind app (sign-in, supplier list, detail, user management, archive, CSV export). Auth configured (Brevo SMTP, invite-only), 5 users with roles assigned, 14 suppliers seeded. Security-critical acceptance criteria verified at the DB level. Not yet done: role-by-role walkthrough, remaining acceptance criteria, the daily digest function.
 
 ## Last session
-Session 1: session-start checks; First Session Setup; created the Supabase project; applied 4 migrations (full schema, RLS, view, triggers); built the entire frontend and confirmed `npm run build` passes. Ran database-level RLS verification simulating all four roles — PASS on acceptance #6 (sustainability blocked from commercial fields), #7 (purchasing blocked from scores), #8 (PC base table 0 rows / view 1 row), #9 (PC insert blocked), #12 (PC change-log shows only 7 permitted fields), #13 (admin cannot alter change_log), #15 (non-archived delete blocked, archived delete allowed, 14 change_log rows retained), #16 (purchasing sees only own profile); positive edits for sustainability/purchasing succeed. All test fixtures cleaned up (0 rows).
+Session 1 (full build in one session): created Supabase project + schema/RLS/triggers; built and deployed the frontend; verified the security-critical RLS criteria at the DB level; walked the builder through Brevo SMTP, Supabase auth config, user creation + roles, and Netlify deployment. Debugged live login via Supabase auth logs + Brevo logs: root causes were (1) wrong SMTP username initially (fixed to b3e1ab001@smtp-brevo.com), (2) codes landing in Gmail Promotions tab, (3) the project issues 8-DIGIT OTP codes but the UI field was capped at 6 (fixed to accept the full length). Builder confirmed everything working. Netlify required MANUAL "Trigger deploy" each push (auto-deploy not firing — needs investigation).
 
 ## Remaining work
 - [x] First Session Setup
@@ -26,10 +25,14 @@ Session 1: session-start checks; First Session Setup; created the Supabase proje
 - [x] Supabase Auth config (dashboard): custom SMTP (Brevo, from rebecca@lcaresource.com, port 587), self-signup disabled, Magic Link template emits the six-digit `{{ .Token }}`
 - [x] Users created (auto-confirmed) and roles assigned: lcaresource.pilot@gmail.com=admin, rebecca@lcaresource.com=admin, +purchasing=purchasing, +sustainability=sustainability, +production=production_control. Demo uses Gmail plus-addressing so all codes land in lcaresource.pilot@gmail.com
 - [x] Seeded 14 suppliers from docs/suppliers-seed.csv (change_log trigger disabled during seed so history starts empty; overall_score generated, not seeded)
+- [x] BUILDER: connected Netlify to the repo, added env vars (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY), deployed from main → https://supplier-esg-register.netlify.app
+- [x] Live login verified — admin signed in via emailed 8-digit code (acceptance #1 effectively confirmed)
+- [ ] BUILDER: update the Magic Link email template wording "six-digit" → "8-digit" (interface already done; template edit was pending at session end)
+- [ ] Investigate why Netlify auto-deploy isn't firing on push to main (currently needs manual Trigger deploy each time)
+- [ ] Role-by-role walkthrough with the builder — show the same supplier rendered differently per role (the core demonstration)
 - [ ] Wire Scheduled arm: Netlify scheduled function, daily 07:00 US Eastern, composes the change digest via Brevo — sends nothing on days with no changes (never to production control)
-- [ ] Local/deployed end-to-end test pass — sign in as all four roles and walk every view
-- [ ] Full acceptance criteria pass incl. #1–5, #10, #11, #14, #17–20
-- [ ] BUILDER: connect Netlify to the repo, add environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY), deploy from main
+- [ ] Full acceptance criteria pass incl. #2–5, #10, #11, #14, #17–20
+- [ ] Sign in as all four roles in the live app and walk every view
 
 ## Build decisions
 - Column-level restriction for production control implemented two ways: a `suppliers_pc` view (security_invoker=false, safe columns only) for reads, and a BEFORE UPDATE column-guard trigger for writes — because all logged-in users share one Postgres `authenticated` role, so per-role column GRANTs are impossible.
@@ -44,8 +47,15 @@ Session 1: session-start checks; First Session Setup; created the Supabase proje
 - change_log is immutable for every role including admin, deliberately tightening "admin has full access" — the builder may overturn this, but it weakens the central demonstration
 - contract_status value list (Active, In renewal, Under review, Expired) is proposed, not confirmed by the builder
 - Supabase Free plan pauses after roughly a week without traffic; the builder wakes the project before demos
+- SPEC DEVIATION: the project issues 8-DIGIT email OTP codes, not the six-digit the spec describes. The UI and (pending) email template now say "8-digit". If six digits is required, set the OTP length to 6 in Supabase auth config; otherwise update the spec to reflect 8.
+- Netlify does not auto-deploy on push to main — each deploy so far needed a manual "Trigger deploy → Clear cache and deploy site". Investigate the GitHub build hook / continuous deployment setting.
+- Login codes land in Gmail's Promotions tab (deliverability is fine; just categorization). Builder can drag one to Primary to train Gmail.
 
 ## Notes for next session
-- The app runs locally with a gitignored `.env.local` (already created with the project URL + publishable key). To run it: `npm install` then `npm run dev`. But login won't work until Supabase Auth SMTP (Brevo) is configured and at least one user is invited.
-- Next natural build step (no builder credentials needed): the Netlify scheduled digest function and seeding the 14 suppliers from docs/suppliers-seed.csv.
-- Seeding needs a role that can insert (admin/purchasing/sustainability) via the app or a service-role script — the base table insert has no column restriction, so a one-off seed with full columns is fine.
+- The app is LIVE at https://supplier-esg-register.netlify.app and login works. Builder will pick up here tomorrow.
+- FIRST: do the role-by-role walkthrough the builder is owed — log in as each of the 4 roles (codes for all Gmail plus-addresses land in lcaresource.pilot@gmail.com Promotions tab; rebecca@lcaresource.com is a second admin whose codes go to her main inbox) and show the same supplier looking different per role. This is the whole point of the tool.
+- Confirm the builder finished the email-template wording edit ("six-digit" → "8-digit") in Supabase → Auth → Emails → Templates → Magic Link.
+- Investigate Netlify auto-deploy (see Known issues) so future pushes deploy without a manual trigger.
+- Remaining build: the daily digest Netlify scheduled function (Brevo, 07:00 US Eastern, skip empty days, never to production control). Needs BREVO_SMTP_* + SUPABASE_SERVICE_ROLE_KEY as Netlify env vars.
+- Then a full acceptance-criteria pass (esp. #10 CSV per role, #11 change log on real edits, #14 archive, #17/18 digest).
+- Reminder: to deploy after code changes, push to main then MANUALLY Trigger deploy in Netlify until auto-deploy is fixed.
