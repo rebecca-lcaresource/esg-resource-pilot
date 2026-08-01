@@ -95,7 +95,7 @@ export default function SignIn() {
                 {busy ? 'Sending…' : 'Send me a code'}
               </button>
               <p className="text-xs text-slate-400">
-                We email a six-digit code. There is no password and no clickable link.
+                We email a one-time code. There is no password and no clickable link.
               </p>
             </form>
           )}
@@ -107,20 +107,20 @@ export default function SignIn() {
               )}
               <div>
                 <label htmlFor="code" className="label mb-1">
-                  Six-digit code
+                  One-time code
                 </label>
                 <input
                   id="code"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   pattern="[0-9]*"
-                  maxLength={6}
+                  maxLength={10}
                   required
                   autoFocus
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  className="input text-center text-lg tracking-[0.5em]"
-                  placeholder="000000"
+                  className="input text-center text-lg tracking-[0.35em]"
+                  placeholder="Enter code"
                 />
                 <p className="mt-1 text-xs text-slate-400">Sent to {email}</p>
               </div>
