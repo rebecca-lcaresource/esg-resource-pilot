@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 
 const NEUTRAL_REQUEST_MSG =
-  'If that address has been invited, a six-digit code is on its way. Enter it below.'
+  'If that address has been invited, an 8-digit code is on its way. Enter it below.'
 
 export default function SignIn() {
   const navigate = useNavigate()
@@ -95,7 +95,7 @@ export default function SignIn() {
                 {busy ? 'Sending…' : 'Send me a code'}
               </button>
               <p className="text-xs text-slate-400">
-                We email a one-time code. There is no password and no clickable link.
+                We email an 8-digit code. There is no password and no clickable link.
               </p>
             </form>
           )}
@@ -107,7 +107,7 @@ export default function SignIn() {
               )}
               <div>
                 <label htmlFor="code" className="label mb-1">
-                  One-time code
+                  8-digit code
                 </label>
                 <input
                   id="code"
