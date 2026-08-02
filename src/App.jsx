@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import DemoWalkthrough from './components/DemoWalkthrough.jsx'
 import SignIn from './pages/SignIn.jsx'
 import SupplierList from './pages/SupplierList.jsx'
 import SupplierDetail from './pages/SupplierDetail.jsx'
@@ -9,6 +10,7 @@ import Archive from './pages/Archive.jsx'
 
 export default function App() {
   return (
+    <>
     <Routes>
       <Route path="/signin" element={<SignIn />} />
 
@@ -42,5 +44,8 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/suppliers" replace />} />
     </Routes>
+    {/* Presenter aid — floats over every screen, including sign-in. Grants no access. */}
+    <DemoWalkthrough />
+    </>
   )
 }

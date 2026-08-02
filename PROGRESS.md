@@ -4,8 +4,8 @@
 > anything. Update it at every save point. Replace content — do not append.
 > History lives in git.
 
-**Session:** 1 — ended (save point)
-**Last updated:** 31 July 2026
+**Session:** 2 — in progress (branch `claude/auth-demo-sidebar-ufzup4`)
+**Last updated:** 2 August 2026
 **Live URL:** https://supplier-esg-register.netlify.app
 
 ## Current state
@@ -29,7 +29,9 @@ Session 1 (full build in one session): created Supabase project + schema/RLS/tri
 - [x] Live login verified — admin signed in via emailed 8-digit code (acceptance #1 effectively confirmed)
 - [ ] BUILDER: update the Magic Link email template wording "six-digit" → "8-digit" (interface already done; template edit was pending at session end)
 - [ ] Investigate why Netlify auto-deploy isn't firing on push to main (currently needs manual Trigger deploy each time)
-- [ ] Role-by-role walkthrough with the builder — show the same supplier rendered differently per role (the core demonstration)
+- [x] `docs/authorization-proof.md` — copy-paste SQL that impersonates each role in the Supabase SQL Editor and shows the DB granting/refusing access (reads + column-level write blocks + append-only change_log), all in rolled-back transactions. Verified live 2 Aug 2026. Demo "receipts" for a technical audience.
+- [x] In-app Demo Walkthrough sidebar — a slide-out presenter aid on every screen (incl. sign-in) listing the auth → authorization steps, with per-step check-off and localStorage-persisted progress (`src/components/DemoWalkthrough.jsx`, mounted in `App.jsx`). Presenter aid only — no data access, grants nothing; DB remains the sole enforcement.
+- [ ] Role-by-role walkthrough with the builder — show the same supplier rendered differently per role (the core demonstration; the new sidebar scripts this end to end)
 - [ ] Wire Scheduled arm: Netlify scheduled function, daily 07:00 US Eastern, composes the change digest via Brevo — sends nothing on days with no changes (never to production control)
 - [ ] Full acceptance criteria pass incl. #2–5, #10, #11, #14, #17–20
 - [ ] Sign in as all four roles in the live app and walk every view

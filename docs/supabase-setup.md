@@ -3,7 +3,7 @@
 > Schema source of truth. Update this file at every save point that touches the
 > database (any table, policy, view, function, trigger, bucket or auth change).
 
-**Last updated:** 31 July 2026 — Session 1
+**Last updated:** 2 August 2026 — Session 2
 
 ---
 
@@ -138,6 +138,42 @@ RLS is **enabled on all three tables**. `anon` has no policy anywhere → no acc
   the authenticated domain (e.g. `no-reply@<domain>`). Raise the auth email rate limit above
   the default 30/hour if needed.
 - Users are invited from the dashboard; `handle_new_user` creates their profile; admin assigns roles.
+
+---
+
+## Demonstrating the authorization — the four-block proof (A1 → A2 → B1 → B3)
+
+The full impersonation script lives in `docs/authorization-proof.md` — copy-paste
+SQL for the Supabase SQL Editor that pretends to be each role and shows the
+database granting or refusing access. Every block runs inside `begin … rollback`,
+so running it changes nothing.
+
+For a live demo you do not need all of it. Four blocks, **run in this order**,
+tell the whole story — each is one sentence you say out loud as the result
+appears:
+
+| Order | Block | What you run | What the database does | The line to say |
+|-------|-------|--------------|------------------------|-----------------|
+| 1 | **A1** | Production Control counts rows in `suppliers` vs the `suppliers_pc` view | base table → **0 rows**; view → 14 | "It can't see the data." |
+| 2 | **A2** | Production Control lists the columns it actually receives | 10 safe columns — no `score_justification`, `internal_notes`, `contract_status`, `contract_renewal_date`, `annual_spend` | "The columns aren't even there." |
+| 3 | **B1** | Purchasing tries to change an ESG score | **rejected** with an error | "It can't edit a score." |
+| 4 | **B3** | Admin tries to insert a `change_log` row | **rejected** with an error | "Not even the admin can rewrite the log." |
+
+**Why this order.** It climbs deliberately: the *least*-privileged user is first
+fenced out of **reading** (rows in A1, then columns in A2), then **writing** is
+blocked by separation of duties (B1), and it finishes on the strongest point —
+the *most*-privileged user, the admin, cannot alter the **audit log** (B3). Each
+beat is enforced by a **different** mechanism, so together they show the model is
+not one trick with one possible bypass:
+
+- **A1** — Production Control has no `SELECT` policy on the base `suppliers` table (RLS returns 0 rows).
+- **A2** — it can read suppliers only through the `suppliers_pc` view, which exposes safe columns of active rows only.
+- **B1** — the `enforce_supplier_column_permissions` BEFORE UPDATE trigger blocks the write (column-level control; not visible in `pg_policies`).
+- **B3** — `change_log` has no insert/update/delete policy for any role, and direct write grants are revoked; it is written solely by the `log_supplier_changes` trigger (append-only, even for admin).
+
+Verified live against the project on 2 August 2026. To reproduce, open the SQL
+Editor and run blocks A1, A2, B1, B3 from `docs/authorization-proof.md`. The
+role → user-ID map is at the top of that file.
 
 ---
 
