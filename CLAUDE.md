@@ -1,7 +1,7 @@
 # Supplier ESG Register
 
 ## Identity
-An internal supplier sustainability register where purchasing, sustainability, production control and an administrator hold different read and edit rights over the same supplier records, accessed by invitation only with a six-digit email code.
+An internal supplier sustainability register where purchasing, sustainability, production control and an administrator hold different read and edit rights over the same supplier records, accessed by invitation only with a 8-digit email code.
 Tier: 3 — login required, and different roles see and edit different things, with data persisting to Supabase (D3+A3)
 Spec version governed: v1.0 — the version of docs/product-spec.md these rules were derived from.
 Position: Standalone
@@ -75,7 +75,7 @@ change_log: anon: no access. Admin, purchasing, sustainability: read all rows. P
 
 Production control's restriction is a COLUMN restriction, not a row restriction. Implement it with a database view exposing only the permitted columns and/or column-level GRANTs on suppliers. Hiding fields in the React component is not acceptable as the only control.
 
-Auth: email one-time code (six-digit), invite-only. Self-registration must be disabled. Implement by modifying the Supabase magic-link email template to emit the token instead of the confirmation URL, with a code entry field in the UI. Do not ship a clickable magic link — enterprise mail scanners consume single-use links before the recipient clicks them.
+Auth: email one-time code (8-digit), invite-only. Self-registration must be disabled. Implement by modifying the Supabase magic-link email template to emit the token instead of the confirmation URL, with a code entry field in the UI. Do not ship a clickable magic link — enterprise mail scanners consume single-use links before the recipient clicks them.
 Roles: admin, purchasing, sustainability, production_control — stored on profiles.role.
 Profiles cannot be seeded from a file: each row must reference a real auth.users id. The builder invites all four users from the Supabase dashboard mid-build, then roles are assigned to the resulting rows.
 

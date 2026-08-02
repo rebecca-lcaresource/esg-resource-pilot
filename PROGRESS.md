@@ -49,14 +49,13 @@ Session 1 (full build in one session): created Supabase project + schema/RLS/tri
 - change_log is immutable for every role including admin, deliberately tightening "admin has full access" — the builder may overturn this, but it weakens the central demonstration
 - contract_status value list (Active, In renewal, Under review, Expired) is proposed, not confirmed by the builder
 - Supabase Free plan pauses after roughly a week without traffic; the builder wakes the project before demos
-- SPEC DEVIATION: the project issues 8-DIGIT email OTP codes, not the six-digit the spec describes. The UI and (pending) email template now say "8-digit". If six digits is required, set the OTP length to 6 in Supabase auth config; otherwise update the spec to reflect 8.
+- RESOLVED (was a spec deviation): the project issues 8-DIGIT email OTP codes. Standardised on 8-digit everywhere — Supabase auth, email template (builder-confirmed), UI, and the spec itself (product-spec.md + CLAUDE.md wording corrected in Session 2, spec version intentionally NOT bumped as it's a wording fix, not a revision).
 - Netlify does not auto-deploy on push to main — each deploy so far needed a manual "Trigger deploy → Clear cache and deploy site". Investigate the GitHub build hook / continuous deployment setting.
 - Login codes land in Gmail's Promotions tab (deliverability is fine; just categorization). Builder can drag one to Primary to train Gmail.
 
 ## Notes for next session
 - The app is LIVE at https://supplier-esg-register.netlify.app and login works. Builder will pick up here tomorrow.
 - FIRST: do the role-by-role walkthrough the builder is owed — log in as each of the 4 roles (codes for all Gmail plus-addresses land in lcaresource.pilot@gmail.com Promotions tab; rebecca@lcaresource.com is a second admin whose codes go to her main inbox) and show the same supplier looking different per role. This is the whole point of the tool.
-- Confirm the builder finished the email-template wording edit ("six-digit" → "8-digit") in Supabase → Auth → Emails → Templates → Magic Link.
 - Investigate Netlify auto-deploy (see Known issues) so future pushes deploy without a manual trigger.
 - Remaining build: the daily digest Netlify scheduled function (Brevo, 07:00 US Eastern, skip empty days, never to production control). Needs BREVO_SMTP_* + SUPABASE_SERVICE_ROLE_KEY as Netlify env vars.
 - Then a full acceptance-criteria pass (esp. #10 CSV per role, #11 change log on real edits, #14 archive, #17/18 digest).

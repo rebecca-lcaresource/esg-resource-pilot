@@ -120,7 +120,7 @@ There are two distinct email flows:
 |--------|--------|
 | Trigger event | A user requests a login code from the sign-in screen |
 | Recipient | The user requesting access |
-| Email content | A six-digit one-time code and its expiry time. No branding, no marketing content, no links |
+| Email content | A 8-digit one-time code and its expiry time. No branding, no marketing content, no links |
 | File attachment in transit | No |
 | Function placement | None — handled natively by Supabase Auth using the custom SMTP configuration. No function required |
 
@@ -235,7 +235,7 @@ There are two distinct email flows:
 
 | Detail | Answer |
 |--------|--------|
-| Authentication method | **Email one-time code (six-digit), not a clickable magic link.** Derived and confirmed: this is an invite-only internal tool, so passwordless is right — nobody forgets a password they never had. The code form rather than the link form is deliberate: enterprise mail security scanners open links in incoming mail before the recipient does, and magic links are single-use, so a scanner consumes the link and the colleague clicks a dead one. A six-digit code has nothing for a scanner to consume. Implemented by modifying the Supabase magic-link email template to emit `{{ .Token }}` instead of the confirmation URL, with a code entry field in the UI |
+| Authentication method | **Email one-time code (8-digit), not a clickable magic link.** Derived and confirmed: this is an invite-only internal tool, so passwordless is right — nobody forgets a password they never had. The code form rather than the link form is deliberate: enterprise mail security scanners open links in incoming mail before the recipient does, and magic links are single-use, so a scanner consumes the link and the colleague clicks a dead one. A 8-digit code has nothing for a scanner to consume. Implemented by modifying the Supabase magic-link email template to emit `{{ .Token }}` instead of the confirmation URL, with a code entry field in the UI |
 | Signup model | Invite-only — Rebecca invites specific users via the Supabase dashboard. Self-registration must be disabled |
 
 > **Privacy note:** User accounts store email addresses. For internal and client tools this falls under the organization's existing privacy framework rather than a consent flow.
@@ -301,7 +301,7 @@ A user's own role must not be editable by that user under any circumstances, inc
 ### Sign-in
 
 - **Purpose:** Let an invited colleague authenticate without a password.
-- **What is visible:** Tool name, a single work-email field, a submit button. After submission, a six-digit code entry field with a resend option.
+- **What is visible:** Tool name, a single work-email field, a submit button. After submission, a 8-digit code entry field with a resend option.
 - **User actions:** Enter email, receive code, enter code.
 - **What happens next:** On success, the user lands on the Supplier List with their role already resolved. On failure or an uninvited address, a neutral message that does not reveal whether the address exists in the system.
 
@@ -409,7 +409,7 @@ Rounded to one decimal place. All three pillars are weighted equally — weighte
 
 | # | What to verify | Expected result | Done? |
 |---|---------------|-----------------|-------|
-| 1 | Sign-in delivers a six-digit code, not a clickable link | Email arrives via Brevo containing a numeric code; entering it authenticates the user | [ ] |
+| 1 | Sign-in delivers a 8-digit code, not a clickable link | Email arrives via Brevo containing a numeric code; entering it authenticates the user | [ ] |
 | 2 | An email address not invited cannot obtain access | Request is refused with a message that does not disclose whether the address is registered | [ ] |
 | 3 | Supplier List renders for every role | Table loads with all specified columns; signed-in user's role is visibly displayed | [ ] |
 | 4 | Overall score calculates correctly | E=4, S=3, G=5 yields 4.0; no role can edit the overall score field | [ ] |
@@ -489,7 +489,7 @@ The builder's DNS is managed by Wix, which cannot publish MX records on subdomai
 **Step 6 — During the build, Claude Code will:**
 18. Enter these values into Supabase → Authentication → SMTP Settings, with a from-address on the authenticated domain such as `no-reply@<domain>`.
 19. Raise the Supabase auth email rate limit from its conservative default of 30 per hour if needed.
-20. Modify the Supabase magic-link email template to emit the six-digit token rather than a confirmation URL.
+20. Modify the Supabase magic-link email template to emit the 8-digit token rather than a confirmation URL.
 21. Set the same credentials as Netlify environment variables for the scheduled digest function.
 
 ---
