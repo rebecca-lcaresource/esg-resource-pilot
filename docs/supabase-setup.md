@@ -130,9 +130,11 @@ RLS is **enabled on all three tables**. `anon` has no policy anywhere → no acc
 
 ## Auth configuration
 
-- Method: email one-time six-digit code, **invite-only**. Self-registration must be disabled
-  (Dashboard → Authentication → Providers/Settings).
-- Modify the magic-link email template to emit `{{ .Token }}` (the six-digit code) instead of
+- Method: email one-time **8-digit** code, **invite-only**. Self-registration must be disabled
+  (Dashboard → Authentication → Providers/Settings). (The project issues 8-digit OTP codes; the
+  spec's "six-digit" is a known deviation — see PROGRESS.md. UI, email template and docs all say
+  8-digit.)
+- Modify the magic-link email template to emit `{{ .Token }}` (the 8-digit code) instead of
   the confirmation URL. Do **not** ship a clickable link.
 - Custom SMTP (Brevo) entered in Dashboard → Authentication → SMTP Settings, from-address on
   the authenticated domain (e.g. `no-reply@<domain>`). Raise the auth email rate limit above

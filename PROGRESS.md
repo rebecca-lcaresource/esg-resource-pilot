@@ -22,12 +22,12 @@ Session 1 (full build in one session): created Supabase project + schema/RLS/tri
 - [x] Wire Export arm: CSV from the permission-filtered source, restricted columns absent
 - [x] Database-level verification of the security-critical acceptance criteria (6–9, 12, 13, 15, 16)
 - [x] BUILDER: Brevo account + domain authenticated (lcaresource.com, DKIM+DMARC verified), SMTP key collected
-- [x] Supabase Auth config (dashboard): custom SMTP (Brevo, from rebecca@lcaresource.com, port 587), self-signup disabled, Magic Link template emits the six-digit `{{ .Token }}`
+- [x] Supabase Auth config (dashboard): custom SMTP (Brevo, from rebecca@lcaresource.com, port 587), self-signup disabled, Magic Link template emits the `{{ .Token }}` OTP (8-digit)
 - [x] Users created (auto-confirmed) and roles assigned: lcaresource.pilot@gmail.com=admin, rebecca@lcaresource.com=admin, +purchasing=purchasing, +sustainability=sustainability, +production=production_control. Demo uses Gmail plus-addressing so all codes land in lcaresource.pilot@gmail.com
 - [x] Seeded 14 suppliers from docs/suppliers-seed.csv (change_log trigger disabled during seed so history starts empty; overall_score generated, not seeded)
 - [x] BUILDER: connected Netlify to the repo, added env vars (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY), deployed from main → https://supplier-esg-register.netlify.app
 - [x] Live login verified — admin signed in via emailed 8-digit code (acceptance #1 effectively confirmed)
-- [ ] BUILDER: update the Magic Link email template wording "six-digit" → "8-digit" (interface already done; template edit was pending at session end)
+- [x] Magic Link email template wording "six-digit" → "8-digit" — docs aligned to 8-digit (supabase-setup.md); builder to eyeball the dashboard template body once (Auth → Emails → Templates → Magic Link) to confirm it reads "8-digit". UI already says 8-digit.
 - [ ] Investigate why Netlify auto-deploy isn't firing on push to main (currently needs manual Trigger deploy each time)
 - [x] `docs/authorization-proof.md` — copy-paste SQL that impersonates each role in the Supabase SQL Editor and shows the DB granting/refusing access (reads + column-level write blocks + append-only change_log), all in rolled-back transactions. Verified live 2 Aug 2026. Demo "receipts" for a technical audience.
 - [x] In-app Demo Walkthrough sidebar — a slide-out presenter aid on every screen (incl. sign-in) listing the auth → authorization steps, with per-step check-off and localStorage-persisted progress (`src/components/DemoWalkthrough.jsx`, mounted in `App.jsx`). Presenter aid only — no data access, grants nothing; DB remains the sole enforcement.
