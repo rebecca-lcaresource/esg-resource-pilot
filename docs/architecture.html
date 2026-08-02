@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Supplier ESG Register — Architecture</title>
+<style>
+  :root {
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+    --bg: #F5F7F9;
+    --surface: #FFFFFF;
+    --surface-2: #EEF2F6;
+    --ink: #0F1B2A;
+    --ink-soft: #44566A;
+    --ink-faint: #6B7C8F;
+    --border: #E1E7EE;
+    --border-strong: #CBD5E1;
+
+    --primary: #1E3A5F;
+    --primary-ink: #1E3A5F;
+    --primary-soft: #E9EFF6;
+    --accent: #2E7D7B;
+    --accent-ink: #226460;
+    --accent-soft: #E2F0EF;
+    --amber: #B45309;
+    --amber-soft: #FBEEDF;
+    --red: #991B1B;
+    --red-soft: #F7E4E4;
+
+    --plate: #FFFFFF;
+    --plate-border: #D8E0E8;
+
+    --shadow: 0 1px 2px rgba(15, 27, 42, .04), 0 8px 24px rgba(15, 27, 42, .05);
+    --radius: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0D1622;
+      --surface: #14273B;
+      --surface-2: #1A2E44;
+      --ink: #E8EEF5;
+      --ink-soft: #AFBFD0;
+      --ink-faint: #849AAD;
+      --border: #253A52;
+      --border-strong: #33475F;
+      --primary: #86ABD3;
+      --primary-ink: #A7C4E4;
+      --primary-soft: #1B324C;
+      --accent: #62B7B2;
+      --accent-ink: #8AD0CB;
+      --accent-soft: #163936;
+      --amber: #E09A4E;
+      --amber-soft: #3A2A16;
+      --red: #E08B8B;
+      --red-soft: #3A1D1D;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 4rem 1.5rem 5rem; }
+
+  .eyebrow {
+    font-family: var(--font-mono); font-size: .72rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--accent-ink); font-weight: 600;
+  }
+
+  .hero { border-bottom: 1px solid var(--border); padding-bottom: 2.25rem; margin-bottom: 3rem; }
+  .hero h1 {
+    font-size: clamp(1.9rem, 4vw, 2.9rem); line-height: 1.08; letter-spacing: -.02em;
+    margin: .6rem 0 .5rem; text-wrap: balance; font-weight: 700;
+  }
+  .hero .lede { font-size: 1.075rem; color: var(--ink-soft); max-width: 62ch; margin: 0 0 1.5rem; }
+  .meta { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .chip {
+    font-family: var(--font-mono); font-size: .74rem; padding: .28rem .6rem; border-radius: 999px;
+    border: 1px solid var(--border-strong); color: var(--ink-soft); background: var(--surface); white-space: nowrap;
+  }
+  .chip.solid { background: var(--primary-soft); border-color: transparent; color: var(--primary-ink); font-weight: 600; }
+
+  section { margin-top: 3.25rem; }
+  .sec-head { margin-bottom: 1.25rem; }
+  .sec-head h2 { font-size: 1.4rem; letter-spacing: -.01em; margin: .35rem 0 .35rem; font-weight: 700; }
+  .sec-head p { margin: 0; color: var(--ink-soft); max-width: 68ch; }
+
+  .diagram {
+    background: var(--plate); border: 1px solid var(--plate-border); border-radius: var(--radius);
+    padding: 1.5rem 1rem; overflow-x: auto; box-shadow: var(--shadow);
+  }
+  .diagram pre.mermaid { margin: 0; text-align: center; min-width: 520px; background: transparent; border: 0; }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 1rem 1.4rem; margin-top: .9rem; font-size: .82rem;
+    color: var(--ink-soft); font-family: var(--font-mono);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: .45rem; }
+  .swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--plate-border); flex: none; }
+  .swatch.ext { background: #E4F1F0; border-color: #2E7D7B; }
+  .swatch.plan { background: #FBEEDF; border-color: #B45309; }
+  .swatch.restricted { background: #F7E4E4; border-color: #991B1B; }
+  .swatch.core { background: #E9EFF6; border-color: #1E3A5F; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 1rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.15rem 1.2rem; }
+  .card h3 { margin: 0 0 .15rem; font-size: 1.02rem; display: flex; align-items: center; gap: .5rem; }
+  .card .kicker { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+  .card p { margin: .55rem 0 0; font-size: .9rem; color: var(--ink-soft); }
+  .card .holds { margin-top: .8rem; padding-top: .7rem; border-top: 1px dashed var(--border-strong); font-size: .8rem; }
+  .card .holds b { color: var(--ink); font-weight: 600; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .dot.core { background: var(--primary); }
+  .dot.ext { background: var(--accent); }
+  .dot.plan { background: var(--amber); }
+
+  .flow-tag { font-family: var(--font-mono); font-weight: 600; font-size: .8rem; color: var(--accent-ink); letter-spacing: .04em; }
+
+  .callout { border-radius: 10px; padding: .85rem 1.05rem; font-size: .9rem; margin-top: 1rem; border: 1px solid; display: flex; gap: .7rem; }
+  .callout .mark { font-family: var(--font-mono); font-weight: 700; flex: none; }
+  .callout.plan { background: var(--amber-soft); border-color: var(--amber); color: var(--ink); }
+  .callout.plan .mark { color: var(--amber); }
+  .callout.danger { background: var(--red-soft); border-color: var(--red); color: var(--ink); }
+  .callout.danger .mark { color: var(--red); }
+  .callout.note { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+  .callout.note .mark { color: var(--accent-ink); }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+  table { border-collapse: collapse; width: 100%; font-size: .875rem; min-width: 640px; }
+  thead th {
+    text-align: left; background: var(--surface-2); color: var(--ink);
+    font-family: var(--font-mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase;
+    padding: .7rem .9rem; border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: .72rem .9rem; border-bottom: 1px solid var(--border); color: var(--ink-soft); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td b { color: var(--ink); font-weight: 600; }
+  code { font-family: var(--font-mono); font-size: .84em; background: var(--surface-2); padding: .1rem .35rem; border-radius: 4px; color: var(--primary-ink); }
+  .pill { font-family: var(--font-mono); font-size: .7rem; padding: .12rem .45rem; border-radius: 999px; white-space: nowrap; font-weight: 600; }
+  .pill.browser { background: var(--accent-soft); color: var(--accent-ink); }
+  .pill.server { background: var(--red-soft); color: var(--red); }
+  .pill.config { background: var(--primary-soft); color: var(--primary-ink); }
+
+  footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: .82rem; color: var(--ink-faint); max-width: 70ch; }
+  a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  @media (max-width: 560px) { .wrap { padding: 2.5rem 1.1rem 3.5rem; } section { margin-top: 2.5rem; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Supplier ESG Register · System Architecture</div>
+    <h1>How the tool is wired, end to end</h1>
+    <p class="lede">A Tier-3 internal register where four roles hold different read and edit rights over the same
+      supplier records. This page maps every moving part — the browser app, Supabase, the Brevo email path, and the
+      one function still on the drawing board — and traces how data actually flows between them.</p>
+    <div class="meta">
+      <span class="chip solid">Tier 3 · login + role-differentiated access</span>
+      <span class="chip">React · Vite · Tailwind</span>
+      <span class="chip">Netlify</span>
+      <span class="chip">Supabase · Postgres · Auth · RLS</span>
+      <span class="chip">Brevo SMTP</span>
+      <span class="chip">GitHub</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">The whole system</div>
+      <h2>One map, every component</h2>
+      <p>Solid arrows are live paths in production today. The dashed amber box is the daily digest function —
+        designed and specified, but not yet built.</p>
+    </div>
+    <div class="diagram">
+<pre class="mermaid">
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace','fontSize':'13px','primaryColor':'#E9EFF6','primaryBorderColor':'#1E3A5F','primaryTextColor':'#0F1B2A','lineColor':'#2E7D7B','tertiaryColor':'#ffffff'}}}%%
+flowchart LR
+  GH[(GitHub<br/>source repo)]:::ext -->|push to main| NL[Netlify<br/>build + CDN]
+  NL -->|serves static app| UI[React app<br/>in the browser]
+  UI <-->|supabase-js · anon key + JWT| PG[(Supabase Postgres<br/>+ Row-Level Security)]
+  UI -->|request / verify code| AU[Supabase Auth]
+  AU -->|custom SMTP| BR[Brevo SMTP]:::ext
+  BR -->|8-digit code| INBOX[User inbox]:::ext
+  AU -.->|issues session JWT| UI
+  SF[Netlify scheduled fn<br/>daily 07:00 ET]:::plan -->|service-role key<br/>reads change_log| PG
+  SF -.->|digest email| BR
+  classDef ext fill:#E4F1F0,stroke:#2E7D7B,color:#123f3e;
+  classDef plan fill:#FBEEDF,stroke:#B45309,color:#7a3d08,stroke-dasharray:5 3;
+</pre>
+    </div>
+    <div class="legend">
+      <span><i class="swatch core"></i> core / production</span>
+      <span><i class="swatch ext"></i> external service</span>
+      <span><i class="swatch plan"></i> planned, not built</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Component inventory</div>
+      <h2>What each part is, and what it holds</h2>
+      <p>Keys are noted where they live. The golden rule: the browser only ever holds public, RLS-bounded
+        credentials; anything that can bypass security stays server-side.</p>
+    </div>
+    <div class="cards">
+
+      <div class="card">
+        <div class="kicker">Frontend</div>
+        <h3><span class="dot core"></span> React app (browser)</h3>
+        <p>Vite + Tailwind single-page app: sign-in, supplier register, role-aware detail view, user management,
+          archive, CSV export. Talks to Supabase through the <code>supabase-js</code> client.</p>
+        <div class="holds"><b>Holds:</b> Supabase URL + <b>anon key</b> (public, browser-safe) and the signed-in
+          user's <b>JWT</b>. Nothing privileged.</div>
+      </div>
+
+      <div class="card">
+        <div class="kicker">Hosting + CI</div>
+        <h3><span class="dot core"></span> Netlify</h3>
+        <p>Serves the static build on its CDN and rebuilds from GitHub <code>main</code>. Also the intended home of
+          the scheduled digest function.</p>
+        <div class="holds"><b>Env vars:</b> <code>VITE_SUPABASE_URL</code>, <code>VITE_SUPABASE_ANON_KEY</code> at
+          build; <code>SUPABASE_SERVICE_ROLE_KEY</code> + <code>BREVO_SMTP_*</code> reserved for the digest fn.</div>
+      </div>
+
+      <div class="card">
+        <div class="kicker">Source</div>
+        <h3><span class="dot core"></span> GitHub</h3>
+        <p>The repository. A push to <code>main</code> triggers a Netlify build and deploy (currently kicked off
+          manually while auto-deploy is being fixed).</p>
+        <div class="holds"><b>Holds:</b> code and docs only — never a key or secret value.</div>
+      </div>
+
+      <div class="card">
+        <div class="kicker">Database</div>
+        <h3><span class="dot core"></span> Supabase Postgres</h3>
+        <p>Three tables — <code>profiles</code>, <code>suppliers</code>, <code>change_log</code> — plus the
+          <code>suppliers_pc</code> view. RLS on every table; triggers enforce column rules and write the audit log.</p>
+        <div class="holds"><b>Enforces:</b> who reads which rows and columns, who may edit which fields, and the
+          append-only change log. This is the real security boundary.</div>
+      </div>
+
+      <div class="card">
+        <div class="kicker">Identity</div>
+        <h3><span class="dot core"></span> Supabase Auth</h3>
+        <p>Email one-time <b>8-digit code</b>, invite-only, self-signup disabled. Sends codes through Brevo and
+          issues a session JWT carrying the user id.</p>
+        <div class="holds"><b>Config:</b> Brevo SMTP credentials entered in the Auth dashboard (not an env var) so
+          Auth can send login codes on the authenticated domain.</div>
+      </div>
+
+      <div class="card">
+        <div class="kicker">Email · external</div>
+        <h3><span class="dot ext"></span> Brevo SMTP</h3>
+        <p>Outbound email relay on the authenticated <code>lcaresource.com</code> domain
+          (<code>smtp-relay.brevo.com:587</code>). Two consumers: Supabase Auth (login codes) and the planned
+          digest function.</p>
+        <div class="holds"><b>Holds:</b> SMTP login + key — stored in the Supabase Auth dashboard and (for the
+          digest) in Netlify env vars. Never in the repo.</div>
+      </div>
+
+      <div class="card" style="border-color: var(--amber);">
+        <div class="kicker" style="color: var(--amber);">Planned · not built</div>
+        <h3><span class="dot plan"></span> Scheduled digest function</h3>
+        <p>A Netlify scheduled function meant to run daily at 07:00 ET: read the last 24h of the change log, compose
+          one digest, and send it — to admin, purchasing and sustainability only, never production control, and
+          nothing at all on a day with no changes.</p>
+        <div class="holds"><b>Would use:</b> the <b>service-role key</b> (bypasses RLS) — which is exactly why it
+          lives in a server function and never in the browser.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Data flow 01</div>
+      <h2>Authentication — the login code</h2>
+      <p>No password and no clickable link. Enterprise mail scanners consume single-use links before the recipient
+        clicks, so the tool emails a code the user types in.</p>
+    </div>
+    <div class="diagram">
+<pre class="mermaid">
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace','fontSize':'13px','primaryColor':'#E9EFF6','primaryBorderColor':'#1E3A5F','primaryTextColor':'#0F1B2A','lineColor':'#2E7D7B','actorBkg':'#E9EFF6','actorBorder':'#1E3A5F','actorTextColor':'#0F1B2A','signalColor':'#2E7D7B','signalTextColor':'#22343f','noteBkgColor':'#E2F0EF','noteBorderColor':'#2E7D7B','noteTextColor':'#123f3e'}}}%%
+sequenceDiagram
+  autonumber
+  actor U as User
+  participant A as React app
+  participant S as Supabase Auth
+  participant B as Brevo SMTP
+  U->>A: enter work email
+  A->>S: signInWithOtp (shouldCreateUser = false)
+  S->>B: send 8-digit code via custom SMTP
+  B-->>U: email with code (no link)
+  U->>A: type the 8-digit code
+  A->>S: verifyOtp (email, token)
+  S-->>A: session JWT (sub = user id)
+  Note over A,S: Signed in. The user's role is read<br/>from profiles and drives every request.
+</pre>
+    </div>
+    <div class="callout note"><span class="mark">i</span>
+      <div>Invite-only is enforced by <code>shouldCreateUser: false</code> — an uninvited address gets the same
+        neutral message and no code, so the screen never reveals who is registered.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Data flow 02</div>
+      <h2>Reading &amp; writing — where authorization actually happens</h2>
+      <p>Every request carries the user's JWT. Postgres — not the interface — decides what comes back and what edits
+        are allowed. The React app mirrors these rules only for convenience.</p>
+    </div>
+    <div class="diagram">
+<pre class="mermaid">
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace','fontSize':'13px','primaryColor':'#E9EFF6','primaryBorderColor':'#1E3A5F','primaryTextColor':'#0F1B2A','lineColor':'#2E7D7B'}}}%%
+flowchart LR
+  B[Browser<br/>JWT + anon key] --> API[Supabase API<br/>PostgREST]
+  API --> RLS{{RLS check ·<br/>current_user_role}}
+  RLS -->|admin · purchasing · sustainability| ST[suppliers table<br/>all columns]
+  RLS -->|production_control| PCV[suppliers_pc view<br/>10 safe columns only]:::restricted
+  ST --> OUT[permission-filtered<br/>response to browser]
+  PCV --> OUT
+  ST -->|UPDATE| CG[column-guard trigger<br/>blocks out-of-role fields]
+  CG -->|allowed change| CL[(change_log<br/>append-only)]
+  classDef restricted fill:#F7E4E4,stroke:#991B1B,color:#5c1010;
+</pre>
+    </div>
+    <div class="legend">
+      <span><i class="swatch restricted"></i> restricted path — production control never reaches the base table</span>
+    </div>
+    <div class="callout note"><span class="mark">i</span>
+      <div>The <b>CSV export</b> is browser-only: it serializes the exact rows the user already holds, so restricted
+        columns are <b>absent from the file</b>, not blanked — the same permission-filtered source as the screen.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Data flow 03</div>
+      <h2>Daily digest <span class="flow-tag">— planned, not built</span></h2>
+      <p>The one remaining arm. It is fully specified but not yet implemented; it is included here so the picture is
+        complete.</p>
+    </div>
+    <div class="diagram">
+<pre class="mermaid">
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace','fontSize':'13px','primaryColor':'#FBEEDF','primaryBorderColor':'#B45309','primaryTextColor':'#5c3208','lineColor':'#B45309'}}}%%
+flowchart LR
+  CRON[Cron · 07:00 ET] --> FN[Scheduled function]
+  FN -->|service-role key<br/>bypasses RLS| CL[(change_log<br/>previous 24h)]
+  CL --> Q{any changes?}
+  Q -->|yes| COMP[compose one digest]
+  Q -->|no| SKIP[send nothing]
+  COMP -->|Brevo SMTP| RCP[admin · purchasing · sustainability]
+  COMP -.->|never| PC[production control]:::danger
+  classDef danger fill:#F7E4E4,stroke:#991B1B,color:#5c1010;
+</pre>
+    </div>
+    <div class="callout plan"><span class="mark">&#9650;</span>
+      <div><b>Why it needs the service-role key:</b> to compose the digest it must read the change log across
+        <em>all</em> users, which means bypassing RLS. That key is all-powerful, so it lives only in this
+        server-side function — never in the browser, never in the repo. Production control is excluded because a
+        digest would carry field changes they are not permitted to see.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Trust boundaries</div>
+      <h2>Where every key lives — and what it can do</h2>
+      <p>The browser is untrusted. The security boundary is Postgres RLS. Credentials are placed by that principle.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Credential</th><th>Stored in</th><th>Used by</th><th>Power</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Anon / publishable key</b></td>
+            <td>Browser build · Netlify env <span class="pill config">config</span></td>
+            <td>Frontend</td>
+            <td>Public and browser-safe. Every request is still bounded by RLS.</td>
+          </tr>
+          <tr>
+            <td><b>User session JWT</b></td>
+            <td>Browser session <span class="pill browser">browser</span></td>
+            <td>Frontend</td>
+            <td>Acts as one specific user — that user's role and nothing more.</td>
+          </tr>
+          <tr>
+            <td><b>Service-role key</b></td>
+            <td>Netlify env · digest fn only <span class="pill server">server-only</span></td>
+            <td>Planned digest function</td>
+            <td><b>Bypasses all RLS.</b> Never in the browser or any user-facing path.</td>
+          </tr>
+          <tr>
+            <td><b>Brevo SMTP login + key</b></td>
+            <td>Supabase Auth dashboard; Netlify env for the digest <span class="pill config">config</span></td>
+            <td>Supabase Auth · digest fn</td>
+            <td>Sends email as the authenticated <code>lcaresource.com</code> domain.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout danger"><span class="mark">!</span>
+      <div>The single rule that keeps the model honest: <b>the service-role key never crosses into the browser.</b>
+        Everything a user touches goes through RLS; only the isolated server function is trusted to read across
+        users.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="eyebrow">Data model</div>
+      <h2>The tables behind it</h2>
+      <p>Three tables and one view. The view is the mechanism that hides restricted columns from production control
+        at the database.</p>
+    </div>
+    <div class="diagram">
+<pre class="mermaid">
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-monospace, SFMono-Regular, Menlo, monospace','fontSize':'13px','primaryColor':'#E9EFF6','primaryBorderColor':'#1E3A5F','primaryTextColor':'#0F1B2A','lineColor':'#2E7D7B'}}}%%
+erDiagram
+  AUTH_USERS ||--|| PROFILES : "1:1 (role)"
+  PROFILES ||--o{ CHANGE_LOG : "changed_by"
+  SUPPLIERS ||--o{ CHANGE_LOG : "supplier_id"
+  SUPPLIERS ||..|| SUPPLIERS_PC : "safe-column view"
+  PROFILES {
+    uuid id PK
+    user_role role
+    text email
+  }
+  SUPPLIERS {
+    uuid id PK
+    text supplier_name
+    int score_e_s_g
+    text commercial_fields
+    numeric overall_score
+  }
+  CHANGE_LOG {
+    uuid id PK
+    text field_name
+    text old_new_value
+    timestamptz changed_at
+  }
+  SUPPLIERS_PC {
+    text safe_columns
+  }
+</pre>
+    </div>
+    <div class="callout note"><span class="mark">i</span>
+      <div><code>change_log</code> is written only by a trigger and has no insert/update/delete policy for any role —
+        append-only, even for admin. <code>overall_score</code> is a generated column, never entered or seeded.</div>
+    </div>
+  </section>
+
+  <footer>
+    Supplier ESG Register — architecture reference. Reflects the production build plus the specified-but-unbuilt
+    daily digest. The supplier names and their published ESG reports are real; scores, notes and commercial figures
+    are invented so the tool can be shown without disclosing confidential information.
+  </footer>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
+</script>
+</body>
+</html>
