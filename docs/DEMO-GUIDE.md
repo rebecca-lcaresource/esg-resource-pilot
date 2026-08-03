@@ -2,6 +2,7 @@
 
 **Live app:** https://supplier-esg-register.netlify.app
 **Built:** 31 July 2026
+**Updated:** 2 August 2026 — added the in-app Demo guide sidebar and runnable database-proof queries
 **Built by:** Rebecca LeBlanc (LCA Resource LLC)
 
 ---
@@ -65,6 +66,10 @@ row-level security), so it cannot be bypassed from the front end.
 > role accounts all deliver to **lcaresource.pilot@gmail.com** (check the
 > **Promotions** tab). `rebecca@lcaresource.com` is a second admin whose codes go
 > to the main inbox.
+>
+> Follow-along tip: the app has a built-in **Demo guide** — a navy tab on the
+> right edge of every screen (including sign-in). Click it to open a panel that
+> lists these steps and lets you check each one off as you present.
 
 **1. Sign in as Admin** (`lcaresource.pilot@gmail.com`)
 - Show the full register: 14 suppliers, sortable/filterable, overall scores.
@@ -112,6 +117,19 @@ simulating each role, not just by clicking the UI. Confirmed:
 - Permanent delete is admin-only and only on already-archived rows; the deleted
   supplier's change-log history is retained.
 - Each non-admin user can read **only their own** profile row.
+
+**Run it live (optional, but the strongest moment for a technical audience).**
+These checks are fully reproducible in the Supabase **SQL Editor** — the exact
+copy-paste queries are in `docs/authorization-proof.md`. Run blocks **A1 → A2 →
+B1 → B3** in order and narrate each as the result appears:
+
+- **A1** — "it can't see the data" (Production Control → **0 rows** from `suppliers`)
+- **A2** — "the columns aren't even there" (its payload has 10 safe columns, no commercial/internal fields)
+- **B1** — "it can't edit a score" (Purchasing edit **rejected** by the database)
+- **B3** — "not even the admin can rewrite the log" (change-log insert **rejected**)
+
+Every block runs inside `begin … rollback`, so running it changes nothing. See
+`docs/supabase-setup.md` for the same sequence with the "why this order" notes.
 
 ---
 
