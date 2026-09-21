@@ -125,6 +125,12 @@ RLS is **enabled on all three tables**. `anon` has no policy anywhere → no acc
   - Error text: `Role <role> may not change suppliers.<column>` (SQLSTATE 42501 → HTTP 403 via PostgREST); the HINT lists that role's editable columns.
 - DELETE: admin only, and only where `is_archived = true`.
 
+**Table/column GRANTs on `suppliers`** (second lock under RLS; migration `tighten_suppliers_grants`, 21 Sep 2026):
+- `anon`: **no privileges at all** (was the Supabase default of all seven). Unauthenticated callers get `permission denied for table suppliers` before RLS is consulted.
+- `authenticated`: `SELECT` all columns; `DELETE` (RLS decides which rows); `INSERT` on `id` + the 13 business columns; `UPDATE` on the 13 business columns only. **No** `INSERT`/`UPDATE` on `created_at`, `updated_at`, `overall_score`, no `UPDATE` on `id`, and `REFERENCES`/`TRIGGER`/`TRUNCATE` revoked (TRUNCATE is not governed by RLS). Defaults and the `set_updated_at` trigger still populate the automatic columns — privilege checks apply to columns named in the statement, not to trigger assignments.
+- `service_role`: unchanged (digest function).
+- Per-role column GRANTs are impossible (one Postgres role for all users), so the trigger above remains the per-role control. The 13 business columns: `supplier_name, country, category, esg_report_url, score_e, score_s, score_g, score_justification, internal_notes, contract_status, contract_renewal_date, annual_spend, is_archived`.
+
 ### `change_log`
 - SELECT: admin / purchasing / sustainability read all. Production control reads only rows whose `field_name` is a column it may read (`supplier_name, country, category, esg_report_url, score_e, score_s, score_g, overall_score, updated_at`).
 - INSERT / UPDATE / DELETE: **no policy for any role, including admin** — append-only, written solely by the trigger (SECURITY DEFINER). Direct write grants also revoked from `anon`/`authenticated`.
