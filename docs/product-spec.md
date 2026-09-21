@@ -414,8 +414,8 @@ Rounded to one decimal place. All three pillars are weighted equally — weighte
 | 3 | Supplier List renders for every role | Table loads with all specified columns; signed-in user's role is visibly displayed | [ ] |
 | 4 | Overall score calculates correctly | E=4, S=3, G=5 yields 4.0; no role can edit the overall score field | [ ] |
 | 5 | Partial scoring does not produce a misleading average | Supplier with two of three pillars scored shows an em dash, not an average | [ ] |
-| 6 | Sustainability cannot edit commercial fields | Direct database update of `annual_spend` as a sustainability user is rejected by RLS, not merely hidden in the UI | [ ] |
-| 7 | Purchasing cannot edit scores | Direct database update of `score_e` as a purchasing user is rejected by RLS | [ ] |
+| 6 | Sustainability cannot edit commercial fields | Direct database update of `annual_spend` as a sustainability user is rejected by RLS, not merely hidden in the UI | [x] 21 Sep 2026 — rejected by DB: `42501 Role sustainability may not change suppliers.annual_spend`; positive control (score_e, score_justification) succeeded |
+| 7 | Purchasing cannot edit scores | Direct database update of `score_e` as a purchasing user is rejected by RLS | [x] 21 Sep 2026 — rejected by DB: `42501 Role purchasing may not change suppliers.score_e`; positive control (annual_spend, contract_status) succeeded |
 | 8 | Production control cannot see restricted columns **in the payload** | Inspecting the network response as a production control user reveals no justification, internal notes, contract status, renewal date or annual spend anywhere | [ ] |
 | 9 | Production control cannot write | Any insert, update or archive attempt is rejected by the database | [ ] |
 | 10 | CSV export respects the exporting user's permissions | Production control's CSV lacks the restricted columns entirely — absent, not blank | [ ] |
