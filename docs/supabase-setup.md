@@ -98,7 +98,7 @@ and bypasses base-table RLS — production control has **no** SELECT policy on t
 | `handle_new_user()` | Trigger on `auth.users` AFTER INSERT — creates a `profiles` row (default `production_control`). |
 | `prevent_self_role_change()` | Trigger on `profiles` BEFORE UPDATE — blocks any user (incl. admin) changing their own role. |
 | `set_updated_at()` | Trigger on `suppliers` BEFORE UPDATE — refreshes `updated_at`. |
-| `enforce_supplier_column_permissions()` | Trigger on `suppliers` BEFORE UPDATE — **column-level write control**: rejects sustainability edits to commercial fields and purchasing edits to scores/justification. |
+| `enforce_supplier_column_permissions()` | Trigger on `suppliers` BEFORE UPDATE — **column-level write control**, allow-list per role. Compares every column of OLD vs NEW (via `to_jsonb`) and raises `42501` naming the role and column if a column outside the caller's allow-list changed. Admin passes; production_control and callers with no profile are rejected outright. `overall_score` (generated) and `updated_at` (owned by `set_updated_at`) are skipped. Any column added to `suppliers` later is locked for non-admins until added to a list here. Runs before `set_updated_at` (name order). Not SECURITY DEFINER — it reads nothing itself; `current_user_role()` is. Migration `suppliers_column_permissions_allowlist`, 21 Sep 2026. |
 | `log_supplier_changes()` + `cl_write()` | Trigger on `suppliers` AFTER INSERT/UPDATE — writes one `change_log` row per changed business field. Derived/automatic fields (overall_score, created_at, updated_at) are not logged. |
 
 All trigger/helper functions have EXECUTE revoked from `anon`/`authenticated`/`public`
@@ -118,8 +118,11 @@ RLS is **enabled on all three tables**. `anon` has no policy anywhere → no acc
 - SELECT: admin / purchasing / sustainability read all rows & columns. **Production control has no base-table SELECT policy** — it reads `suppliers_pc`.
 - INSERT: admin / purchasing / sustainability.
 - UPDATE: admin / purchasing / sustainability (row-level); **column-level** limits enforced by the `enforce_supplier_column_permissions` trigger:
-  - sustainability may edit scores, justification, internal_notes, is_archived, identity fields; **not** commercial fields.
-  - purchasing may edit contract_status, renewal_date, annual_spend, internal_notes, is_archived, identity fields; **not** scores/justification.
+  - admin: any column.
+  - sustainability may edit **only** `supplier_name, country, category, esg_report_url, score_e, score_s, score_g, score_justification, internal_notes, is_archived`.
+  - purchasing may edit **only** `supplier_name, country, category, esg_report_url, contract_status, contract_renewal_date, annual_spend, internal_notes, is_archived`.
+  - every other column (`id`, `created_at`, and anything on the other role's list) is rejected for those two roles; production_control is rejected for everything.
+  - Error text: `Role <role> may not change suppliers.<column>` (SQLSTATE 42501 → HTTP 403 via PostgREST); the HINT lists that role's editable columns.
 - DELETE: admin only, and only where `is_archived = true`.
 
 ### `change_log`

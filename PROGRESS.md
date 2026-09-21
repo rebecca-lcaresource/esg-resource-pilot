@@ -4,14 +4,16 @@
 > anything. Update it at every save point. Replace content — do not append.
 > History lives in git.
 
-**Session:** 2 — in progress (branch `claude/auth-demo-sidebar-ufzup4`)
-**Last updated:** 2 August 2026
+**Session:** 3 — in progress (main)
+**Last updated:** 21 September 2026
 **Live URL:** https://supplier-esg-register.netlify.app
 
 ## Current state
 LIVE AND WORKING. Deployed to Netlify and login works end-to-end: builder signed in successfully as admin with an emailed one-time code. Supabase project `esg-resource-pilot` (ref `hulgunguwjhxsgdhinrm`) healthy — all three tables (RLS on), production-control column restriction (suppliers_pc view + column-guard trigger), append-only change_log trigger, generated overall_score, auth signup trigger. Frontend is a complete Vite + React + Tailwind app (sign-in, supplier list, detail, user management, archive, CSV export). Auth configured (Brevo SMTP, invite-only), 5 users with roles assigned, 14 suppliers seeded. Security-critical acceptance criteria verified at the DB level. Not yet done: role-by-role walkthrough, remaining acceptance criteria, the daily digest function.
 
 ## Last session
+Session 3 (21 Sep 2026): hardened the `suppliers` column-guard trigger. Replaced the deny-list `enforce_supplier_column_permissions()` (which only blocked the three commercial columns for sustainability and the four score columns for purchasing, leaving `id`, `created_at` and any future column editable) with an allow-list that compares every column OLD vs NEW and rejects with `42501` `Role <role> may not change suppliers.<column>`. Applied as migration `suppliers_column_permissions_allowlist`; docs/supabase-setup.md and docs/authorization-proof.md updated (expected error strings changed; B1 now forces a real change like B2). Live impersonation test could not be run from this session (permission classifier) — builder to run docs/authorization-proof.md B1/B2/B4/B5 in the SQL Editor. Builder deferred a follow-up: tighten table-level GRANTs on `suppliers` for `anon`/`authenticated` as a second layer under RLS.
+
 Session 1 (full build in one session): created Supabase project + schema/RLS/triggers; built and deployed the frontend; verified the security-critical RLS criteria at the DB level; walked the builder through Brevo SMTP, Supabase auth config, user creation + roles, and Netlify deployment. Debugged live login via Supabase auth logs + Brevo logs: root causes were (1) wrong SMTP username initially (fixed to b3e1ab001@smtp-brevo.com), (2) codes landing in Gmail Promotions tab, (3) the project issues 8-DIGIT OTP codes but the UI field was capped at 6 (fixed to accept the full length). Builder confirmed everything working. Netlify required MANUAL "Trigger deploy" each push (auto-deploy not firing — needs investigation).
 
 ## Remaining work
@@ -43,6 +45,7 @@ Session 1 (full build in one session): created Supabase project + schema/RLS/tri
 - change_log is written only by an AFTER INSERT/UPDATE trigger; no write policy exists for any role (append-only incl. admin), and direct write grants revoked.
 - New auth users get a profiles row via trigger, defaulting to `production_control` (least privilege); admin reassigns. First admin must be set manually in SQL (see docs/supabase-setup.md).
 - The `security_definer_view` advisor ERROR on suppliers_pc is a reviewed, accepted exception — it is the column-restriction mechanism itself.
+- Column-guard trigger is an allow-list, not a deny-list (Session 3): nothing has to be listed to be protected, only to be permitted, so a column added to `suppliers` later is locked for non-admins by default. `overall_score` and `updated_at` are excluded from the comparison — the former is generated (not assignable, not yet computed in BEFORE), the latter is overwritten by `set_updated_at` on every update.
 
 ## Known issues
 - Tool name "Supplier ESG Register" was proposed and accepted by default, never explicitly confirmed — cosmetic, changeable any time
@@ -55,6 +58,8 @@ Session 1 (full build in one session): created Supabase project + schema/RLS/tri
 - Login codes land in Gmail's Promotions tab (deliverability is fine; just categorization). Builder can drag one to Primary to train Gmail.
 
 ## Notes for next session
+- Builder-approved follow-up (small, separate job): tighten table-level GRANTs on `public.suppliers`. Today `anon` and `authenticated` hold INSERT/UPDATE/SELECT/REFERENCES on every column; RLS makes this safe (anon has no policies), but the spec names column-level GRANTs as an optional second layer. Plan: revoke all from `anon`; for `authenticated`, revoke UPDATE on `id`, `created_at`, `updated_at`, `overall_score` and REFERENCES entirely. Per-role column grants are impossible (one Postgres role for all users), so the trigger stays the per-role control.
+- Builder to run docs/authorization-proof.md B1, B2, B4, B5 in the Supabase SQL Editor to confirm the new trigger's error strings live (rolled-back; no data changes).
 - ⭐ DEMO-DAY REMINDERS (builder asked to be reminded of these first thing when they log back in):
   1. **Wake Supabase before the demo** — the Free-plan project (`esg-resource-pilot`, ref `hulgunguwjhxsgdhinrm`) pauses after ~a week idle. Open the dashboard and let it resume, or both app login AND the SQL proof queries will fail.
   2. **Login codes land in `lcaresource.pilot@gmail.com` → the Promotions tab** (Gmail plus-addressing routes all four role accounts there). `rebecca@lcaresource.com` codes go to her main inbox.

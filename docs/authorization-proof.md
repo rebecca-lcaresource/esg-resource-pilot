@@ -147,13 +147,15 @@ everything.
 begin;
 set local role authenticated;
 set local request.jwt.claims to '{"sub":"4ea24007-cbb9-4928-ba12-c837ce883196","role":"authenticated"}';
-update public.suppliers set score_e = 5
+update public.suppliers
+  set score_e = case when score_e = 5 then 4 else 5 end
   where id = (select id from public.suppliers limit 1);
 rollback;
 ```
 
 **Expected — an error:**
-`Purchasing role cannot edit ESG scores or the score justification.`
+`Role purchasing may not change suppliers.score_e`
+(with a HINT listing the columns purchasing *may* edit).
 
 ### B2 · Sustainability CANNOT edit a commercial field → rejected
 
@@ -168,9 +170,10 @@ rollback;
 ```
 
 **Expected — an error:**
-`Sustainability role cannot edit commercial fields (contract_status, contract_renewal_date, annual_spend).`
-(The `case` forces a real change; the guard trigger only fires when a protected
-column's value actually changes.)
+`Role sustainability may not change suppliers.contract_status`
+(with a HINT listing the columns sustainability *may* edit). The `case` forces a
+real change; the guard trigger compares every column OLD vs NEW and only objects
+when a column outside the caller's allow-list actually changes.
 
 ### B3 · Even ADMIN cannot write the change log → rejected (append-only)
 
