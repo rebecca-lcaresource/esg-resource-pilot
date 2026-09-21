@@ -86,7 +86,15 @@ Exposes **only** permitted columns of **active** suppliers:
 where `is_archived = false`. Defined `WITH (security_invoker = false)` so it runs as owner
 and bypasses base-table RLS — production control has **no** SELECT policy on the base
 `suppliers` table, so restricted columns can never appear in a payload they receive.
-`SELECT` granted to `authenticated` only.
+`SELECT` granted to `authenticated` only (`anon` gets `permission denied for view`).
+
+> ⚠️ **Do not set `security_invoker = on` on this view.** The Supabase advisor flags it as
+> `security_definer_view` (ERROR); that warning is a reviewed, accepted exception — see
+> "Advisor notes" below. An unrecorded migration (`set_security_invoker_on_suppliers_pc`,
+> 26 Aug 2026) flipped it on, and production control silently read **0 rows** until it was
+> reverted on 21 Sep 2026 (`restore_definer_on_suppliers_pc`). If the advisor is ever
+> "cleaned up" again, this role's entire read path disappears. Quick check:
+> `select reloptions from pg_class where relname = 'suppliers_pc'` must show `security_invoker=off`.
 
 ---
 
