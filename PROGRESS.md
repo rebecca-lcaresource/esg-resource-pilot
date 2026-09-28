@@ -4,8 +4,8 @@
 > anything. Update it at every save point. Replace content — do not append.
 > History lives in git.
 
-**Session:** 3 — in progress (main)
-**Last updated:** 21 September 2026
+**Session:** 4 — in progress (main)
+**Last updated:** 22 September 2026
 **Live URL:** https://supplier-esg-register.netlify.app
 
 ## Current state
@@ -38,6 +38,10 @@ Session 1 (full build in one session): created Supabase project + schema/RLS/tri
 - [ ] Wire Scheduled arm: Netlify scheduled function, daily 07:00 US Eastern, composes the change digest via Brevo — sends nothing on days with no changes (never to production control)
 - [ ] Full acceptance criteria pass incl. #2–5, #10, #11, #14, #17–20
 - [ ] Sign in as all four roles in the live app and walk every view
+- [ ] PRIORITY (builder request, carried from Session 3 notes): install the Impeccable design skill (Apache-2.0, github.com/pbakaus/impeccable) via `npx impeccable install` then `/impeccable init`. Wire the existing brand rules (#1E3A5F / #2E7D7B, Inter, no gradients, dense-corporate) into its DESIGN.md as the AUTHORITATIVE brief so it refines within the identity rather than redesigning marketing-style. Controlled polish pass on ONE screen first for builder review. Fresh branch; never right before a demo.
+- [ ] Fix `docs/authorization-proof.md` A1: it states the view returns 14 rows, the register now holds 15 (a "LyondellBasell" supplier added after seeding, originally named "TEST"). Make the expected count relative rather than hard-coded.
+- [ ] Tighten `anon` privileges on `profiles` and `change_log` — both still hold Supabase-default grants (RLS blocks them, same situation `suppliers` was in before `tighten_suppliers_grants`). Small job, not urgent.
+- [ ] Pre-demo check, every time: `select reloptions from pg_class where relname = 'suppliers_pc'` must return `security_invoker=off`. The Supabase advisor keeps flagging this view; never click its fix.
 
 ## Build decisions
 - Column-level restriction for production control implemented two ways: a `suppliers_pc` view (security_invoker=false, safe columns only) for reads, and a BEFORE UPDATE column-guard trigger for writes — because all logged-in users share one Postgres `authenticated` role, so per-role column GRANTs are impossible.
@@ -59,16 +63,4 @@ Session 1 (full build in one session): created Supabase project + schema/RLS/tri
 - Login codes land in Gmail's Promotions tab (deliverability is fine; just categorization). Builder can drag one to Primary to train Gmail.
 
 ## Notes for next session
-- ⚠️ Before every demo, confirm `suppliers_pc` is still a definer view: `select reloptions from pg_class where relname = 'suppliers_pc'` → must be `security_invoker=off`. The Supabase advisor will keep flagging it; do not click its fix.
-- Note for the proof doc: `docs/authorization-proof.md` A1 says the view returns 14 rows; the register now holds 15 (a "LyondellBasell" supplier was added after seeding, originally named "TEST"). Update the expected count or make it relative.
-- `anon` still holds Supabase-default privileges on `profiles` and `change_log` (RLS blocks it, same situation `suppliers` was in). Same tightening could be applied there — small job, not urgent.
-- ⭐ DEMO-DAY REMINDERS (builder asked to be reminded of these first thing when they log back in):
-  1. **Wake Supabase before the demo** — the Free-plan project (`esg-resource-pilot`, ref `hulgunguwjhxsgdhinrm`) pauses after ~a week idle. Open the dashboard and let it resume, or both app login AND the SQL proof queries will fail.
-  2. **Login codes land in `lcaresource.pilot@gmail.com` → the Promotions tab** (Gmail plus-addressing routes all four role accounts there). `rebecca@lcaresource.com` codes go to her main inbox.
-- The app is LIVE at https://supplier-esg-register.netlify.app. Session 2 merged to main the in-app Demo Walkthrough sidebar (right-edge "Demo guide" tab, every screen incl. sign-in) + the authorization-proof docs. NOTE: the sidebar only appears after a Netlify deploy — auto-deploy is broken, so the builder must Trigger deploy manually to see it live.
-- PRIORITY NEXT SESSION (builder request): install the Impeccable design skill — Apache-2.0, github.com/pbakaus/impeccable — via `npx impeccable install` then `/impeccable init`. Wire the existing brand rules (palette #1E3A5F / #2E7D7B, Inter, no gradients, dense-corporate) into its DESIGN.md as the AUTHORITATIVE brief, so it refines within the identity rather than redesigning bold/marketing-style (Impeccable's "dream big and bold, award-caliber" ethos conflicts with the CLAUDE.md brand mandate "reads as a working internal system, not a marketing page"). Do a controlled polish pass on ONE screen first for builder review before touching all screens. Fresh branch; never right before a demo.
-- The role-by-role walkthrough the builder was owed is now delivered in-app by the Demo guide sidebar — no manual login-per-role narration needed, though the live demo still signs in as each role.
-- Netlify auto-deploy: repo side confirmed clean (see Known issues); investigate the dashboard Netlify↔GitHub link — most likely the Netlify GitHub App lost repo access / webhook not delivering. Reconnect the repo or reinstall the GitHub App with access to rebecca-lcaresource/esg-resource-pilot, then push a trivial commit to confirm an auto-build fires.
-- Remaining build: the daily digest Netlify scheduled function (Brevo, 07:00 US Eastern, skip empty days, never to production control). Needs BREVO_SMTP_* + SUPABASE_SERVICE_ROLE_KEY as Netlify env vars.
-- Then a full acceptance-criteria pass (esp. #10 CSV per role, #11 change log on real edits, #14 archive, #17/18 digest).
-- Reminder: to deploy after code changes, push to main then MANUALLY Trigger deploy in Netlify until auto-deploy is fixed.
+_(cleared at the start of Session 4 — items carried into Remaining work and Known issues.)_
